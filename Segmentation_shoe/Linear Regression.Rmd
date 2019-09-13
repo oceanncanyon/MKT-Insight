@@ -1,0 +1,398 @@
+---
+title: "Week 6 - Linear Regression"
+author: "Ling Ge"
+date: '2018-09-23'
+---
+_italic The document is prepared as an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code._
+
+_italic Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.Executing chunks of codes by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*._
+
+#Set up the working environment
+Before we proceed, recall that We have installed the packages we need. Always remember to load packages before you start a new R session, script or markdown file.
+
+```{r, include=FALSE}
+# "include=FALSE" - Not to include the codes and output of this chunk in the output HTML file.
+library(tidyverse)
+library(modelr)
+```
+
+
+##1. Linear regression
+
+```{r}
+#Let's look at the dataset sim1. It is a simple simulated dataset with two variables.
+View(sim1)
+?sim1
+View(sim1)
+head(sim1)
+#Plot x and y
+
+ggplot(sim1,aes(x,y))+
+  geom_point()
+
+##
+ggplot(sim1,aes(x,y))+
+  geom_point()
+
+#Create a table with many combinations of beta0 and beta1
+?tibble
+coeffs<-tibble(
+  beta0=runif(250,-20,40),
+  beta1=runif(250,-5,5)
+)
+
+
+##畫一堆隨機完美線性分布的線，再把資料組貼上去，看看哪條線最近
+##這邊用runif建立兩個隨機數字組，待會才能做abline，原因是建立一堆隨機的數字用於常數項和截距
+
+
+
+##tibble() =把某個data拿去轉成tibble資料型態
+## tibble是一種資料型態，方便讓tidyverse處理，是一種弱類型，也是data.frame的子類型
+class(coeffs)
+head(coeffs)
+is.tibble(coeffs)
+##runif() uniform distribution，創造一個完美分配的隨機群組，這裡創造出來的是一個numeric的data
+class(runif(250,-20,40))
+?runif
+#runif(n,min=,max=) n表示observations要建立幾個，min：observation數值的下限，max:上限
+
+
+
+##
+coeffs<- tibble(
+  beta0<-runif(250,-20,40),
+  beta1<-runif(250,-5,5)
+)
+head(coeffs)
+coeffs<- tibble(
+  beta0=runif(250,-20,40),
+  beta1=runif(250,-5,5)
+)
+head(coeffs)
+
+##比較上面兩個，<-和=
+##在local環境下=只作用在local，而<-會依同作用在global，但是在global環境下，這兩個是一樣的
+##如果在local環境下使用<-，代表在global環境也會產生一個相同的var,這時候可以把<-理解為一個function，而不是單純賦值而已，是“事”，而=只作用在local,就只是單純的“物”
+##注意，tibble裡面，放的是兩個obj，而不是兩個var賦值，因為tibble是在“把某樣obj轉換成tibble，如果放<-的話，意思是把beta0<-runif(250,-20,40),beta2<-...這整個賦值行為轉成tibble(兩件事）；放=則表示有beta0,beta2,兩個obj（兩個物），把這兩個obj轉成tibble
+
+
+test1=123
+test1
+test2<-123
+test2
+##目前beta0在coeffs下的一個子dataset，直接招喚beta0是叫不到的，要給出詳細路徑
+coeffs$beta0
+
+
+
+#Plot the lines on to the scatterplot of x and y
+ggplot(sim1,aes(x,y))+
+  geom_abline(
+    mapping=aes(intercept=beta0,slope=beta1), data=coeffs,alpha=1/4
+  )+
+  geom_point()
+##abline==> y=a+bx的line，利用代入隨機的a和b(隨機一個斜率和隨機一個截距)，來取得一堆隨機的線
+##在原本的point圖上面，疊上一組隨機的直線圖，來看看這些點到底有沒有線性關係
+
+##
+ggplot(sim1,aes(x,y))+
+  geom_abline(data=coeffs,mapping=aes(intercept=beta0, slope=beta1),alpha=1/4)+
+  geom_point()
+##注意，斜率是可以無限大的，斜率1等於45度，斜率無限大=90度,斜率0=0度
+
+
+
+#Fitting the model
+sim1_mod<-lm(y~x,data=sim1)
+summary(sim1_mod)
+coef(sim1_mod)
+
+
+##用summary()叫出lm模型內的數值，來看看準確度
+##t value=14.651 代表說y=b0+b1X,其中beta0是0的機會等於14.651個SD, 所以幾乎不可能
+##需要一個夠小的t-value 來確認x,y的關係
+##lm()  建立regression model，y~x表示拿predict y by x=> y=beta0+beta1*x
+##lm(obj1,data=) obj1表示要怎麼預測，data=資料在哪？
+class(sim1_mod)
+###-?-所以在建立之後就已經畫出那條線了？？
+
+##這裡看不懂不是code的問題，是statistic不會，看書補回來！！！！
+
+##
+sim1_mod<-lm(y~x,data=sim1)
+summary(sim1_mod)
+
+
+#Visualizing the predictions
+sim1_pred<-sim1%>%
+  add_predictions(sim1_mod)
+sim1_pred
+##add_predictions 會在原本資料組內，依照regression model來增加預測組
+##add_predictions(obj), obj為要拿來算預測的model
+
+##
+sim1_pred<-sim1%>%
+  add_predictions(sim1_mod)
+head(sim1_pred)
+
+
+##針對pred作圖
+ggplot(sim1_pred,aes(x))+
+  geom_point(aes(y=y))+
+  geom_line(
+    aes(y=pred),
+    color='red',
+    size=1
+  )
+
+
+##
+ggplot(sim1_pred,aes(x,y))+
+  geom_point()+
+  geom_line(aes(y=pred),color='red',size=1)
+
+##用geom_smooth內建的lm model功能，可以直接做linear regression圖（省去上面的繁瑣）
+ggplot(sim1,aes(x,y))+
+  geom_point()+
+  geom_smooth(
+    method=lm,
+    color='red',
+    size=1
+  )
+
+##
+ggplot(sim1,aes(x,y))+
+  geom_point()+
+  geom_smooth(
+    method=lm,
+    color='red',
+    size=1
+  )
+##直接使用smooth對一個資料組作圖，指令為method=lm，注意這邊不是放在aes裡面，因為沒有改動到x,y軸
+
+#Visualizing the residuals
+sim1_pred<-sim1%>%
+  add_residuals(sim1_mod)
+View(sim1_pred)
+##在原本的資料裡面加上residuals，來方便看準確度
+## add_residuals(obj), obj為要加入哪個模型的residual
+##
+sim1_pred<-sim1%>%
+  add_residuals(sim1_mod)
+head(sim1_pred)
+
+##看看residual會不會很大
+ggplot(sim1_pred,aes(resid))+
+  geom_freqpoly(binwidth=0.5)+
+  geom_histogram(binwidth=0.3)
+##證明我們的模型，residuals 集中於0(如果不是，那就代表別的可能有更好的RSS結果)
+
+##
+ggplot(sim1_pred,aes(resid))+
+  geom_freqpoly(binwidth=0.5)+
+  geom_histogram(binwidth=0.3)
+
+#You may also want to plot X ~ residual
+##用另一個方法來看residual到底大不大
+##如果x和residual看起來有點關係，那就代表還有沒被找到的關係（可以拿回去預測y)
+## 把每個x叫出來，看看對應的resid是多少
+##geom_ref_line，可以在一個指定的y軸高度上，畫一條線
+ggplot(sim1_pred, aes(x,resid))+
+  geom_ref_line(h=0,colour='skyblue')+
+  geom_point()
+
+##
+ggplot(sim1_pred,aes(x,resid))+
+  geom_ref_line(h=0,colour='skyblue')+
+  geom_point()
+
+##有時候color適用美國拼法，有時候是用英國拼法colour
+
+#If there seems relationship between X and residuals, it means that the model does not fully captured the relationship between x and y.
+
+```
+
+##2. Linear Regression with categorical variables
+##所以其實categorical也是能預測numerical
+```{r}
+#Another dataset with a categorical variable
+View(sim2)
+head(sim2)
+
+#Fit the model
+sim2_mod<-lm(y~x,data=sim2)
+summary(sim2_mod)
+
+##
+sim2_mod<-lm(y~x,data=sim2)
+summary(sim2_mod)
+
+## ~ =by, 表示用預測y, by x 
+
+#Plotting the predictions
+
+sim2_pred<-sim2%>%
+  add_predictions(sim2_mod)
+head(sim2_pred)
+ggplot(sim2_pred,aes(x))+
+  geom_point(aes(y=y))+
+  geom_point(aes(y=pred),
+            color='red',
+            size=4
+             )
+
+##
+
+sim2_pred<-sim2%>%
+  add_predictions(sim2_mod)
+head(sim2_pred)
+
+ggplot(sim2_pred,aes(x))+
+  geom_point(aes(y=y))+
+  geom_point(aes(y=pred),
+             color='red',
+             size=4)
+
+
+```
+
+##3. Linear Regression with interactions
+##eg.有沒有性別的影響（在其他條件都一樣的情況下）
+##剛剛上面講的是x預測y，現在這裡開始是x1,x2,x3...預測y
+```{r}
+#Another simulated dataset
+View(sim3)
+head(sim3)
+
+#Explore the relationships with plots
+##先用point plot來看看分布狀況，來確定是否有關係
+##用x2來分類各筆資料的顏色
+ggplot(sim3,aes(x1,y))+
+  geom_point(aes(color=x2))
+##從上面的圖，會發現x2在影響著y,但疊在一起很不清楚，用facet來把他拆開
+##複習一下，facet就是說，在x,y軸被指定好的情況下，用第三個z variable來分類資料，依照不同的z來做圖。 
+##所以！z必須是categorical
+ggplot(sim3,aes(x1,y))+
+  geom_point(aes(color=x2))+
+  facet_wrap(~x2)
+
+##
+ggplot(sim3,aes(x1,y))+
+  geom_point(aes(color=x2))
+
+ggplot(sim3,aes(x1,y))+
+  geom_point(aes(color=x2))+
+  facet_wrap(~x2)
+##wrap的切法，就是拿x2底下的factor來切，所以這張圖會出現a,b,c,d四個分類的圖
+
+#Model 1 is linear and Model 2 is 
+##開始建model
+###-?- 加號表示什麼？categorical為何可以和numerical加一起？
+mod1<-lm(y~x1+x2,data=sim3)
+summary(mod1)
+
+
+mod2<-lm(y~x1*x2,data=sim3)
+summary(mod2)
+
+##
+mod1<-lm(y~x1+x2,data=sim3)
+summary(mod1)
+mod2<-lm(y~x1*x2,data=sim3)
+
+## * means interaction
+
+#Visualizing the two models
+#Generate predictions for both models
+sim3_pred<-sim3%>%
+  gather_predictions(mod1,mod2)
+##
+sim3_pred<-sim3%>%
+  gather_predictions(mod1,mod2)
+
+
+
+##用gather_predictions(arg1,arg2)一次加入兩個pred
+##加上prediction的data會把不同model的prediction分開放（兩個model不會交互作用）
+##下面一個有120row一個有240row
+View(sim3_pred)
+sim3_pred2<-sim3%>%
+  add_predictions(mod1)
+View(sim3_pred2)
+
+#Compare the two models
+ggplot(sim3_pred,aes(x2,y,color=x1))+
+  geom_point()+
+  geom_line(aes(y=pred))+
+  facet_wrap(~model)
+
+##
+ggplot(sim3_pred,aes(x1,y,color=x2))+
+  geom_point()+
+  geom_line(aes(y=pred))+
+  facet_wrap(~model)
+##比較這兩個，會發現把顏色的依據設為一個Var,若該var是categorical則會用不同顏色，若是numerical則用漸層
+ggplot(sim3_pred,aes(x2,y,color=x1))+
+  geom_point()+
+  geom_line(aes(y=pred))+
+  facet_wrap(~model)
+
+
+
+#Which model is better? We can take a look at the residuals
+sim3_pred<-sim3%>%
+  gather_residuals(mod1,mod2)
+ggplot(sim3_pred,aes(x1,resid,color=x2))+
+  geom_point()+
+  facet_grid(model~x2)
+## model 的residual 更random分配，代表model更準，如果不夠ramdom代表還有些沒找到的原因在影響residual
+
+##利用觀察redidual分佈來確認mod是否準確
+
+sim3_pred<-sim3%>%
+  gather_residuals(mod1,mod2)
+
+ggplot(sim3_pred,aes(x1,resid,color=x2))+
+  geom_point()+
+  facet_grid(model~x2)
+##注意，看residual時，不會把y叫出來，因為這時候是要看「每個x1對應的residuals」跟預測對象沒關係。
+##facet_grid和上面講的facet_wrap的差別在於，grid會考慮四個var(除了x,y軸外)，會把兩個var互相拿去做切分，再依照切分來顯示圖形，所以以這個圖來說，model~x2，表示：切分model用x2，所以會出現mod1&a,mod2&a,mod1&b,mod2&b,mod1&c,mod2&c,mod1&d,mod2&d八個圖
+##換言之，wrap和grid的差別在拿一個或兩個var來切
+```
+
+##4. Interactions of two continuous variables
+
+```{r}
+#Equivalent models for two interacting continuous variables
+
+
+
+
+#It's not very easy to see the difference of color scale
+
+
+
+```
+
+##5. The diamond data
+
+```{r}
+#Recall the diamond dataset we worked with. We found that low quality (cut, clarity,color) diamonds seem to have higher price.
+
+#Now we fit a model to separate out the effect of carat
+#Transform the dataset by taking log of the price 
+
+
+#Look at the relationship between price and carat
+
+
+#Taking out the effect of carat, look at the boxplot of residuals over quality
+
+
+
+#A full model to predict
+
+
+```
+

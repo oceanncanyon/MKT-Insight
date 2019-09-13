@@ -1,0 +1,707 @@
+---
+title: "Segment EDA"
+author: "Warren Wang"
+output: 
+    html_document:
+        toc: true
+        toc_float: true
+        smooth_scroll: true
+        df_print: paged
+        theme: united
+        highlight: tango
+        code_folding: show
+---
+```{r,Set Environment, include=FALSE,message=FALSE,warning=FALSE}
+library(knitr)
+library(tidyverse)
+library(stringi)
+library(rlang)
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+myData <- drop_na(read_csv('Clean_Data_With_Segment_Label.csv')[,-c(1,2)])
+
+##re arrange the col, since aug is not in right place
+myData <- myData[c(seq(1,9),27,seq(10,26),seq(28,46))]
+##
+
+seg1 <- myData[myData$segment==1,]
+seg2 <- myData[myData$segment==2,]
+seg3 <- myData[myData$segment==3,]
+seg4 <- myData[myData$segment==4,]
+seg5 <- myData[myData$segment==5,]
+seg6 <- myData[myData$segment==6,]
+seg7 <- myData[myData$segment==7,]
+
+```
+
+#Segment Size
+```{r,Segment Size,message=FALSE,warning=FALSE}
+##Segment Size##
+cat('Propotion of each segment:  \n')
+print(table(myData$segment))
+print(round(table(myData$segment)/nrow(myData),digit=3))
+```
+
+#seg1
+```{r,seg_compare_seg1, message=FALSE,warning=FALSE}
+########
+##seg1##
+########
+seg1rate <- nrow(seg1)/nrow(myData)
+##Run a roop to compare rate( attribute rate / ovservation rate)##
+compare_rate <- list()
+need_mannual <- c()
+
+for(i in colnames(seg1)){
+  if(length(table(seg1[,i]))==length(table(myData[,i]))){
+    compare_rate[i]<-list(value=(round((table(seg1[i])/table(myData[i]))/seg1rate,digit=3)))}
+  else{
+    need_mannual <- append(need_mannual,i)
+
+  }
+}
+
+cat('seg1 compare to total: \n')
+print(compare_rate)
+
+cat('filtered, +/- 10%: \n') 
+print(unlist(compare_rate)[unlist(compare_rate)>1.1|unlist(compare_rate)<0.9]-1)
+
+################################
+##Plot the recency abnormality##
+################################
+#since the recency is fluturated, I plot it
+
+recency_abnorm <- data.frame(time=seq(0,21),abnorm=(unlist(compare_rate['recency'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='recency fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+
+################################
+##Plot the tenure abnormality##
+################################
+#since the tenure is fluturated, I plot it
+
+tenure_abnorm <- data.frame(time=seq(0,21),(abnorm=unlist(compare_rate['tenure'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='tenure fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+################################
+
+cat('Mean of Seg1 / Mean of total:\n')
+mean_table <- round(colMeans(seg1)/colMeans(myData),digit=3)[-46]
+print(mean_table)
+
+cat('filtered, +/- 10%: \n')
+filter_idx <- mean_table>1.1|mean_table<0.9
+mean_table[filter_idx]-1
+
+
+
+##############################
+##Plot the month fluturation##
+##############################
+#since the purchase month is fluturated, I plot it
+
+month_mean <- data.frame(
+  month=seq(1,12),
+  value=mean_table[c(seq(3,9),27,seq(10,13))],row.names = NULL)
+ggplot(data=month_mean,aes(month,(value-1)*100))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\n mean of total', title='Purchase happening in month')+
+  scale_x_continuous(breaks=seq(1,12))
+
+```
+
+#seg2
+```{r,seg_compare_seg2, message=FALSE,warning=FALSE}
+########
+##seg2##
+########
+seg2rate <- nrow(seg2)/nrow(myData)
+##Run a roop to compare rate( attribute rate / ovservation rate)##
+compare_rate <- list()
+need_mannual <- c()
+
+for(i in colnames(seg2)){
+  if(length(table(seg2[,i]))==length(table(myData[,i]))){
+    compare_rate[i]<-list(value=(round((table(seg2[i])/table(myData[i]))/seg2rate,digit=3)))}
+  else{
+    need_mannual <- append(need_mannual,i)
+
+  }
+}
+cat('seg2 compare to total: \n')
+print(compare_rate)
+
+cat('filtered, +/- 10%: \n') 
+print(unlist(compare_rate)[unlist(compare_rate)>1.1|unlist(compare_rate)<0.9]-1)
+
+################################
+##Plot the recency abnormality##
+################################
+#since the recency is fluturated, I plot it
+
+recency_abnorm <- data.frame(time=seq(0,21),abnorm=(unlist(compare_rate['recency'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='recency fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+
+################################
+##Plot the tenure abnormality##
+################################
+#since the tenure is fluturated, I plot it
+
+tenure_abnorm <- data.frame(time=seq(0,21),(abnorm=unlist(compare_rate['tenure'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='tenure fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+################################
+cat('Mean of Seg2 / Mean of total:\n')
+mean_table <- round(colMeans(seg2)/colMeans(myData),digit=3)[-46]
+print(mean_table)
+
+cat('filtered, +/- 10%: \n')
+filter_idx <- mean_table>1.1|mean_table<0.9
+mean_table[filter_idx]-1
+
+##############################
+##Plot the month fluturation##
+##############################
+#since the purchase month is fluturated, I plot it
+
+month_mean <- data.frame(
+  month=seq(1,12),
+  value=mean_table[c(seq(3,9),27,seq(10,13))],row.names = NULL)
+ggplot(data=month_mean,aes(month,(value-1)*100))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\n mean of total', title='Purchase happening in month')+
+  scale_x_continuous(breaks=seq(1,12))
+```
+
+#seg3
+```{r,seg_compare_seg3, message=FALSE,warning=FALSE}
+########
+##seg3##
+########
+seg3rate <- nrow(seg3)/nrow(myData)
+##Run a roop to compare rate( attribute rate / ovservation rate)##
+compare_rate <- list()
+need_mannual <- c()
+
+for(i in colnames(seg3)){
+  if(length(table(seg3[,i]))==length(table(myData[,i]))){
+    compare_rate[i]<-list(value=(round((table(seg3[i])/table(myData[i]))/seg3rate,digit=3)))}
+  else{
+    need_mannual <- append(need_mannual,i)
+
+  }
+}
+cat('seg3 compare to total: \n')
+print(compare_rate)
+
+cat('filtered, +/- 10%: \n') 
+print(unlist(compare_rate)[unlist(compare_rate)>1.1|unlist(compare_rate)<0.9]-1)
+
+################################
+##Plot the recency abnormality##
+################################
+#since the recency is fluturated, I plot it
+
+recency_abnorm <- data.frame(time=seq(0,21),abnorm=(unlist(compare_rate['recency'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='recency fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+
+################################
+##Plot the tenure abnormality##
+################################
+#since the tenure is fluturated, I plot it
+
+tenure_abnorm <- data.frame(time=seq(0,21),(abnorm=unlist(compare_rate['tenure'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='tenure fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+################################
+
+cat('Mean of Seg3 / Mean of total:\n')
+mean_table <- round(colMeans(seg3)/colMeans(myData),digit=3)[-46]
+print(mean_table)
+
+cat('filtered, +/- 10%: \n')
+filter_idx <- mean_table>1.1|mean_table<0.9
+mean_table[filter_idx]-1
+
+
+##############################
+##Plot the month fluturation##
+##############################
+#since the purchase month is fluturated, I plot it
+
+month_mean <- data.frame(
+  month=seq(1,12),
+  value=mean_table[c(seq(3,9),27,seq(10,13))],row.names = NULL)
+ggplot(data=month_mean,aes(month,(value-1)*100))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\n mean of total', title='Purchase happening in month')+
+  scale_x_continuous(breaks=seq(1,12))
+```
+
+#seg4
+```{r,seg_compare_seg4, message=FALSE,warning=FALSE}
+########
+##seg4##
+########
+seg4rate <- nrow(seg4)/nrow(myData)
+##Run a roop to compare rate( attribute rate / ovservation rate)##
+compare_rate <- list()
+need_mannual <- c()
+
+for(i in colnames(seg4)){
+  if(length(table(seg4[,i]))==length(table(myData[,i]))){
+    compare_rate[i]<-list(value=(round((table(seg4[i])/table(myData[i]))/seg4rate,digit=3)))}
+  else{
+    need_mannual <- append(need_mannual,i)
+
+  }
+}
+cat('seg4 compare to total: \n')
+print(compare_rate)
+
+cat('filtered, +/- 10%: \n') 
+print(unlist(compare_rate)[unlist(compare_rate)>1.1|unlist(compare_rate)<0.9]-1)
+
+################################
+##Plot the recency abnormality##
+################################
+#since the recency is fluturated, I plot it
+
+recency_abnorm <- data.frame(time=seq(0,21),abnorm=(unlist(compare_rate['recency'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='recency fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+
+################################
+##Plot the tenure abnormality##
+################################
+#since the tenure is fluturated, I plot it
+
+tenure_abnorm <- data.frame(time=seq(0,21),(abnorm=unlist(compare_rate['tenure'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='tenure fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+################################
+
+cat('Mean of Seg4 / Mean of total:\n')
+mean_table <- round(colMeans(seg4)/colMeans(myData),digit=3)[-46]
+print(mean_table)
+
+cat('filtered, +/- 10%: \n')
+filter_idx <- mean_table>1.1|mean_table<0.9
+mean_table[filter_idx]-1
+
+##############################
+##Plot the month fluturation##
+##############################
+#since the purchase month is fluturated, I plot it
+
+month_mean <- data.frame(
+  month=seq(1,12),
+  value=mean_table[c(seq(3,9),27,seq(10,13))],row.names = NULL)
+ggplot(data=month_mean,aes(month,(value-1)*100))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\n mean of total', title='Purchase happening in month')+
+  scale_x_continuous(breaks=seq(1,12))
+```
+
+#seg5
+```{r,seg_compare_seg5, message=FALSE,warning=FALSE}
+########
+##seg5##
+########
+seg5rate <- nrow(seg5)/nrow(myData)
+##Run a roop to compare rate( attribute rate / ovservation rate)##
+compare_rate <- list()
+need_mannual <- c()
+
+for(i in colnames(seg5)){
+  if(length(table(seg5[,i]))==length(table(myData[,i]))){
+    compare_rate[i]<-list(value=(round((table(seg5[i])/table(myData[i]))/seg5rate,digit=3)))}
+  else{
+    need_mannual <- append(need_mannual,i)
+
+  }
+}
+cat('seg5 compare to total: \n')
+print(compare_rate)
+
+cat('filtered, +/- 10%: \n') 
+print(unlist(compare_rate)[unlist(compare_rate)>1.1|unlist(compare_rate)<0.9]-1)
+
+################################
+##Plot the recency abnormality##
+################################
+#since the recency is fluturated, I plot it
+
+recency_abnorm <- data.frame(time=seq(0,21),abnorm=(unlist(compare_rate['recency'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='recency fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+
+################################
+##Plot the tenure abnormality##
+################################
+#since the tenure is fluturated, I plot it
+
+tenure_abnorm <- data.frame(time=seq(0,21),(abnorm=unlist(compare_rate['tenure'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='tenure fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+################################
+
+cat('Mean of Seg5 / Mean of total:\n')
+mean_table <- round(colMeans(seg5)/colMeans(myData),digit=3)[-46]
+print(mean_table)
+
+cat('filtered, +/- 10%: \n')
+filter_idx <- mean_table>1.1|mean_table<0.9
+mean_table[filter_idx]-1
+
+##############################
+##Plot the month fluturation##
+##############################
+#since the purchase month is fluturated, I plot it
+
+month_mean <- data.frame(
+  month=seq(1,12),
+  value=mean_table[c(seq(3,9),27,seq(10,13))],row.names = NULL)
+ggplot(data=month_mean,aes(month,(value-1)*100))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\n mean of total', title='Purchase happening in month')+
+  scale_x_continuous(breaks=seq(1,12))
+```
+
+#seg6
+```{r,seg_compare_seg6, message=FALSE,warning=FALSE}
+########
+##seg6##
+########
+seg6rate <- nrow(seg6)/nrow(myData)
+##Run a roop to compare rate( attribute rate / ovservation rate)##
+compare_rate <- list()
+need_mannual <- c()
+
+for(i in colnames(seg6)){
+  if(length(table(seg6[,i]))==length(table(myData[,i]))){
+    compare_rate[i]<-list(value=(round((table(seg6[i])/table(myData[i]))/seg6rate,digit=3)))}
+  else{
+    need_mannual <- append(need_mannual,i)
+
+  }
+}
+cat('seg6 compare to total: \n')
+print(compare_rate)
+
+cat('filtered, +/- 10%: \n') 
+print(unlist(compare_rate)[unlist(compare_rate)>1.1|unlist(compare_rate)<0.9]-1)
+
+################################
+##Plot the recency abnormality##
+################################
+#since the recency is fluturated, I plot it
+
+recency_abnorm <- data.frame(time=seq(0,21),abnorm=(unlist(compare_rate['recency'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='recency fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+
+################################
+##Plot the tenure abnormality##
+################################
+#since the tenure is fluturated, I plot it
+
+tenure_abnorm <- data.frame(time=seq(0,21),(abnorm=unlist(compare_rate['tenure'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='tenure fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+################################
+
+cat('Mean of Seg6 / Mean of total:\n')
+mean_table<- round(colMeans(myData)/colMeans(seg6),digit=3)[-46]
+print(mean_table)
+
+cat('filtered, +/- 10%: \n')
+filter_idx <- mean_table>1.1|mean_table<0.9
+mean_table[filter_idx]-1
+
+##############################
+##Plot the month fluturation##
+##############################
+#since the purchase month is fluturated, I plot it
+
+month_mean <- data.frame(
+  month=seq(1,12),
+  value=mean_table[c(seq(3,9),27,seq(10,13))],row.names = NULL)
+ggplot(data=month_mean,aes(month,(value-1)*100))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\n mean of total', title='Purchase happening in month')+
+  scale_x_continuous(breaks=seq(1,12))
+
+```
+
+#seg7
+```{r,seg_compare_seg7, message=FALSE,warning=FALSE}
+########
+##seg7##
+########
+seg7rate <- nrow(seg7)/nrow(myData)
+##Run a roop to compare rate( attribute rate / ovservation rate)##
+compare_rate <- list()
+need_mannual <- c()
+
+for(i in colnames(seg7)){
+  if(length(table(seg7[,i]))==length(table(myData[,i]))){
+    compare_rate[i]<-list(value=(round((table(seg7[i])/table(myData[i]))/seg7rate,digit=3)))}
+  else{
+    need_mannual <- append(need_mannual,i)
+
+  }
+}
+cat('seg7 compare to total: \n')
+print(compare_rate)
+
+cat('filtered, +/- 10%: \n') 
+print(unlist(compare_rate)[unlist(compare_rate)>1.1|unlist(compare_rate)<0.9]-1)
+
+################################
+##Plot the recency abnormality##
+################################
+#since the recency is fluturated, I plot it
+
+recency_abnorm <- data.frame(time=seq(0,21),abnorm=(unlist(compare_rate['recency'])-1)*100,row.names = NULL)
+ggplot(data=recency_abnorm,aes(time,abnorm))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\nthis segment should be', title='recency fluturation')#+geom_text(aes(label = round(abnorm, 2)),vjust = "inward", hjust = "inward",col='firebrick3',show.legend = FALSE)
+
+################################
+
+cat('Mean of Seg7 / Mean of total:\n')
+mean_table <- round(colMeans(seg7)/colMeans(myData),digit=3)[-46]
+print(mean_table)
+
+cat('filtered, +/- 10%: \n')
+filter_idx <- mean_table>1.1|mean_table<0.9
+mean_table[filter_idx]-1
+
+##############################
+##Plot the month fluturation##
+##############################
+#since the purchase month is fluturated, I plot it
+
+month_mean <- data.frame(
+  month=seq(1,12),
+  value=mean_table[c(seq(3,9),27,seq(10,13))],row.names = NULL)
+ggplot(data=month_mean,aes(month,(value-1)*100))+
+  geom_line(col="royalblue3")+
+  geom_hline(yintercept=0,col='firebrick3')+
+  geom_point(col="royalblue3",alpha=0.75)+
+  labs(y='+- % than\n mean of total', title='Purchase happening in month')+
+  scale_x_continuous(breaks=seq(1,12))
+
+```
+
+
+#Summary of mean, median
+```{r,summary of mean, median,message=FALSE,warning=FALSE}
+############################
+##create mean,median table##
+############################
+
+len <- seq(1,ncol(myData)-1)
+summary_mean <- 
+  data.frame(seg1=len,seg2=len,seg3=len,seg4=len,seg5=len,seg6=len,seg7=len)
+
+summary_median <- 
+  data.frame(seg1=len,seg2=len,seg3=len,seg4=len,seg5=len,seg6=len,seg7=len)
+####
+for (i in seq(1,7)){
+median <- summary(myData[myData$segment==i,])[seq(3,(ncol(myData)-1)*6-3,6)]
+median <- strsplit(median,':')
+median <- strsplit(unlist(median)," ")
+median <- stri_remove_empty(unlist(median))[seq(2,90,2)]
+
+mean <- summary(myData[myData$segment==i,])[seq(4,(ncol(myData)-1)*6-2,6)]
+mean <- strsplit(mean,":")
+mean <- strsplit(unlist(mean)," ")
+mean <- stri_remove_empty(unlist(mean))[seq(2,nrow(myData)*2,2)]
+
+####
+
+summary_mean[,i] <- data.frame(temp=round(as.numeric(mean),3))
+summary_median[,i] <- data.frame(temp=round(as.numeric(median),3))
+}
+
+summary_mean <- data.frame(t(summary_mean))
+colnames(summary_mean) <- colnames(myData)[len]
+summary_median <- data.frame(t(summary_median))
+colnames(summary_median) <- colnames(myData)[len]
+
+#####################
+##create rank table##
+#####################
+
+rank_mean <- data.frame(segment=paste('seg',seq(1,7),sep=''))
+rank_median <- data.frame(segment=paste('seg',seq(1,7),sep=''))
+####
+for (i in colnames(myData)[len]){
+temp <- tibble::rownames_to_column(summary_mean, "segment")
+temp <- temp%>%arrange(desc(!!parse_quosure(i)))
+temp_2 <- tibble::rownames_to_column(summary_median, "segment")
+temp_2 <- temp%>%arrange(desc(!!parse_quosure(i)))
+for(j in temp$segment){
+  rank_mean[rank_mean$segment==j,i] <- which((temp$segment)==j)
+  rank_median[rank_median$segment==j,i] <- which((temp_2$segment)==j)
+}}
+####
+
+
+write.csv(summary_mean,file='summary_mean.csv',row.names = TRUE)
+write.csv(summary_median,file='summary_median.csv',row.names = TRUE)
+write.csv(rank_mean,file='rank_mean.csv',row.names = TRUE)
+write.csv(rank_median,file='rank_median.csv',row.names = TRUE)
+
+
+#########################
+##pick out some outline##
+#########################
+
+highlight_idx <- colnames(summary_mean)[c(1,2,seq(16,20),23,24,36)]
+highlight_mean <- summary_mean[,highlight_idx]
+
+
+##############################
+##Every month's visit number##
+##############################
+visit_every_month <- data.frame(segment=c('Summer Fling','Mad Christmas','Daddy Daycare','Hood Rich','Coal for Christmas','Personal Shopper','Be My Valentine'))
+
+for (i in seq(2,13)){
+visit_every_month[,i] <- round(unlist(summary_mean[,i+1])*table(myData$segment),2)
+}
+
+colnames(visit_every_month)[seq(2,13)] <- seq(1,13)
+visit_every_month[,seq(2,13)] <- unlist(visit_every_month[,seq(2,13)])
+####
+write.csv(highlight_mean,file='highlight_mean.csv',row.names = TRUE)
+write.csv(visit_every_month,file='visit_every_month.csv',row.names = TRUE)
+#assign(paste("seg",1,sep=""),mean)
+
+
+```
+
+
+#Categorical Management
+```{r,Categorical Management,message=FALSE,warning=FALSE}
+idx <- colnames(summary_mean)[c(seq(16,20),seq(41,45))]
+category_management <- tibble::rownames_to_column(summary_mean[idx], "segment")
+category_management$segment <- as.factor(category_management$segment)
+#####change the segment's name, if you already have
+levels(category_management$segment) <- c('Summer Fling','Mad Christmas','Daddy Daycare','Hood Rich','Coal for Christmas','Personal Shopper','Be My Valentine')
+#####put title here
+title <- paste(c('MEN','WOMEN','KIDS','ATHLETIC','ACCESSORIES'),"department categorical management",sep=" ")
+
+
+#####
+for (i in seq(2,length(title)+1)){
+idx_x=colnames(category_management)[i]
+idx_y=colnames(category_management)[i+length(title)]
+
+x=unlist(category_management[,idx_x])
+y=unlist(category_management[,idx_y])*100
+x_left_angle=min(x)-2
+x_right_angle=max(x)+2
+y_bot_angle=min(y)-2
+y_top_angle=max(y)+2
+
+print(
+ggplot(category_management,aes(x,y,col=category_management$segment))+
+  geom_point(size=5, alpha=0.8)+
+  annotate("label", fill="grey", x =x_left_angle , y = y_bot_angle, label = "            Convenience", alpha = 0.3)+
+  annotate("label", fill="grey", x =x_left_angle , y = y_top_angle, label = "     Occasion", alpha = 0.3)+
+  annotate("label", fill="grey", x =x_right_angle , y = y_top_angle, label = "Destination         ", alpha = 0.3)+
+  annotate("label", fill="grey", x =x_right_angle , y = y_bot_angle, label = "Routine    ", alpha = 0.3)+
+  geom_hline(yintercept = (max(y)+min(y))/2, col='firebrick3',size=1)+
+  geom_vline(xintercept = (max(x)+min(x))/2, col='firebrick3',size=1)+
+  labs(x="average number of item purchase",y="% of customers in segment purchase", title=title[i-1])+
+  theme(legend.title = element_blank())
+)
+}
+```
+
+
+
+#Total_boxplot
+```{R,Total_boxplot, message=FALSE,warning=FALSE}
+
+mynamestheme <- theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15)), 
+                  axis.title = element_text(family = "Helvetica", size = (5), colour = "steelblue4"),
+                  axis.text = element_text(family = "Courier", colour = "cornflowerblue", size = (15)),
+                  legend.position = "none")
+
+
+boxplot_var <- c("spend_per_txn","spend_per_item","total_spend",  "mens_dept_spend", "womens_dept_spend","kids_dept_spend","athletic_dept_spend","accessories_spend","response", "total_txns",   "total_items",  "unique_sizes", "unique_depts", "internet_spend", "tenure","retained_spend","cmpns","pct_response", "opens", "clicks","hhincome","hhage","hhwom","hhmen","hhkids")
+
+
+for (i in boxplot_var){
+  idx=myData[,i]!=0
+  temp=myData[idx,c("segment",i)]
+  x=as.factor(unlist(temp[1]))
+  y=unlist(temp[2])
+  
+   print(ggplot(temp,aes(x,y,col=x,na.rm = TRUE))+
+     geom_boxplot(na.rm = TRUE)+labs(x='segment', title=i, y="")+mynamestheme)
+ }
+
+```
+
+
+
+
+
+

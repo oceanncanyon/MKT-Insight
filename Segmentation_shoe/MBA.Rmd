@@ -1,0 +1,134 @@
+---
+title: "Market Basket Analytics"
+author: "Warren Wang"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    smooth_scroll: true
+    df_print: paged
+    theme: journal
+---
+
+```{r, include=FALSE,message=FALSE,warning=FALSE}
+# "include=FALSE" - Not to include the codes and output of this chunk in the output HTML file.
+Loadlibraries=function(){
+library(tidyverse)
+library(modelr)
+library(lubridate)
+print("The libraries have been loaded.")
+}
+
+Loadlibraries()
+```
+##Wrangling
+Labeling the data for later use.
+```{R,Wrangling,include=FALSE,message=FALSE,warning=FALSE}
+
+myData <- read.csv("Clean_Data_With_Segment_Label.csv")[-c(1,2)]
+MBA_idx <- colnames(myData)[seq(41,46)]
+myData <- myData[,MBA_idx]
+
+#####
+
+```
+
+##Coefficient of correlation
+Have a glimpse on correlation coefficient
+```{r,Coefficient of correlation}
+summary(myData)
+
+cor_numVar<-cor(myData,use='pairwise.complete.obs')
+corrplot::corrplot.mixed(cor_numVar,tl.col='black',tl.pos='lt',tl.cex=0.7,cl.cex=0.7,number.cex=0.7)
+
+colnames(myData)
+
+#Assign subset by cluster label 
+
+seg1 <- myData[myData$segment==1,seq(1,5)]
+seg2 <- myData[myData$segment==2,seq(1,5)]
+seg3 <- myData[myData$segment==3,seq(1,5)]
+seg4 <- myData[myData$segment==4,seq(1,5)]
+seg5 <- myData[myData$segment==5,seq(1,5)]
+seg6 <- myData[myData$segment==6,seq(1,5)]
+seg7 <- myData[myData$segment==7,seq(1,5)]
+
+```
+
+# MBA_model
+##total
+```{r,MBA_model_total,message=FALSE,warning=FALSE}
+
+#Logistic regression
+
+man_dept_buy<- glm(man_dept_buy~womens_dept_buy+kids_dept_buy+athletic_dept_buy+accessories_dept_buy, family = binomial,data=myData)
+
+womens_dept_buy<- glm(womens_dept_buy~man_dept_buy+kids_dept_buy+athletic_dept_buy+accessories_dept_buy, family = binomial,data=myData)
+
+kids_dept_buy<- glm(kids_dept_buy~man_dept_buy+womens_dept_buy+athletic_dept_buy+accessories_dept_buy, family = binomial,data=myData)
+
+athletic_dept_buy<- glm(athletic_dept_buy~man_dept_buy+womens_dept_buy+kids_dept_buy+accessories_dept_buy, family = binomial,data=myData)
+
+accessories_dept_buy<- glm(accessories_dept_buy~man_dept_buy+womens_dept_buy+kids_dept_buy+athletic_dept_buy, family = binomial,data=myData)
+
+
+##coef_effect
+man_dept_effect <- (round(exp(man_dept_buy$coefficients[-1]),4)-1)*100
+womens_dept_effect <- (round(exp(womens_dept_buy$coefficients[-1]),4)-1)*100
+kids_dept_effect <- (round(exp(kids_dept_buy$coefficients[-1]),4)-1)*100
+athletic_dept_effect <- (round(exp(athletic_dept_buy$coefficients[-1]),4)-1)*100
+accessories_dept_effect <- (round(exp(accessories_dept_buy$coefficients[-1]),4)-1)*100
+
+#probability
+category <- colnames(myData)[-1]
+wrap <- c(man_dept_effect,womens_dept_effect,kids_dept_effect,athletic_dept_effect,accessories_dept_effect)
+
+idx <- seq(1,4)
+for (i in 1:length(category)){
+  cat("the probability of buying   ",category[i], "   changes in %, if consumers:\n\n" )
+  print(wrap[idx])
+  cat("\n\n\n")
+  idx <- idx+4
+}
+
+```
+
+
+
+
+##seg7
+```{r,seg7,message=FALSE,warning=FALSE}
+man_dept_buy<- glm(man_dept_buy~womens_dept_buy+kids_dept_buy+athletic_dept_buy+accessories_dept_buy, family = binomial,data=seg7)
+
+womens_dept_buy<- glm(womens_dept_buy~man_dept_buy+kids_dept_buy+athletic_dept_buy+accessories_dept_buy, family = binomial,data=seg7)
+
+kids_dept_buy<- glm(kids_dept_buy~man_dept_buy+womens_dept_buy+athletic_dept_buy+accessories_dept_buy, family = binomial,data=seg7)
+
+athletic_dept_buy<- glm(athletic_dept_buy~man_dept_buy+womens_dept_buy+kids_dept_buy+accessories_dept_buy, family = binomial,data=seg7)
+
+accessories_dept_buy<- glm(accessories_dept_buy~man_dept_buy+womens_dept_buy+kids_dept_buy+athletic_dept_buy, family = binomial,data=seg7)
+
+
+##coef_effect
+man_dept_effect <- (round(exp(man_dept_buy$coefficients[-1]),4)-1)*100
+womens_dept_effect <- (round(exp(womens_dept_buy$coefficients[-1]),4)-1)*100
+kids_dept_effect <- (round(exp(kids_dept_buy$coefficients[-1]),4)-1)*100
+athletic_dept_effect <- (round(exp(athletic_dept_buy$coefficients[-1]),4)-1)*100
+accessories_dept_effect <- (round(exp(accessories_dept_buy$coefficients[-1]),4)-1)*100
+
+#probability
+category <- colnames(seg7)
+wrap <- c(man_dept_effect,womens_dept_effect,kids_dept_effect,athletic_dept_effect,accessories_dept_effect)
+
+idx <- seq(1,4)
+for (i in 1:length(category)){
+  cat("the probability of buying   ",category[i], "   changes in %, if consumers:\n\n" )
+  print(wrap[idx])
+  cat("\n\n\n")
+  idx <- idx+4
+}
+```
+
+
+
+
